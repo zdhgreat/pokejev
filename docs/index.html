@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jev plays Pokémon Showdown · pokejev</title>
+<meta name="description" content="Code computes the facts, Jev (TypeSafe's decision model) picks the move. Steer a Pokémon battle AI with one plain-text sentence.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--g0:#0f380f;--g1:#1b4a1b;--g2:#306230;--g3:#8bac0f;--g4:#9bbc0f;--g5:#e0f8d0;--warn:#e8d44d;
+--px:"Press Start 2P",ui-monospace,monospace;--mono:ui-monospace,"Cascadia Mono",Consolas,"Noto Sans Mono","Noto Sans SC",monospace;
+--pop:0 0 0 4px var(--g0),6px 6px 0 4px var(--g2)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background-color:var(--g0);color:var(--g5);font:16px/1.7 var(--mono);
+background-image:linear-gradient(rgba(155,188,15,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(155,188,15,.05) 1px,transparent 1px);background-size:16px 16px}
+body.zh .en,body:not(.zh) .zh{display:none}
+a{color:var(--g4)}.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+nav{position:sticky;top:0;z-index:5;background:rgba(15,56,15,.94);border-bottom:4px solid var(--g2)}
+nav .wrap{display:flex;align-items:center;gap:22px;height:64px}.logo{font:14px var(--px)}.logo b{color:var(--g4)}
+nav .links{display:flex;gap:18px;margin-left:auto;font:9px var(--px);text-transform:uppercase}nav .links a{color:var(--g3);text-decoration:none}
+nav .links a:hover{color:var(--g5)}
+.btn{display:inline-block;padding:14px 18px;font:11px var(--px);text-transform:uppercase;text-decoration:none;background:var(--g4);color:var(--g0);
+box-shadow:var(--pop);border:0;cursor:pointer;margin:8px 22px 8px 4px}.btn.alt{background:var(--g2);color:var(--g5)}
+.btn:hover{background:var(--g5);color:var(--g0)}.btn:active{transform:translate(3px,3px)}
+#lang{padding:9px 10px;font-size:9px;margin:0}
+.hero{padding:76px 0 44px}.kicker{font:11px var(--px);color:var(--g4);letter-spacing:1px}.kicker:before{content:"";display:inline-block;width:10px;height:10px;background:var(--g4);margin-right:12px}
+h1{font:44px/1.35 var(--px);margin:26px 0 22px;color:var(--g5);text-shadow:4px 4px 0 var(--g2)}h1 .hl{color:var(--g4)}
+.lead{font:12px/2 var(--px);color:var(--g3);max-width:860px;margin:0 0 30px}
+h2{font:20px/1.5 var(--px);color:var(--g4);margin:0 0 26px;text-shadow:3px 3px 0 var(--g2)}
+section.wrap{padding-top:58px;padding-bottom:58px;border-top:4px solid var(--g2)}
+.screen{margin:40px 0 10px;background:var(--g1);border:4px solid var(--g4);box-shadow:8px 8px 0 var(--g2);padding:14px}
+.scrlabel{font:9px var(--px);color:var(--g4);margin:2px 2px 12px;display:flex;align-items:center;gap:10px}
+.led{width:9px;height:9px;border-radius:50%;background:#e04b4b;box-shadow:0 0 8px #ff6b6b;display:inline-block}
+.device{margin:40px auto 10px;max-width:880px;background:#c4cfa1;border-radius:18px 18px 70px 18px;padding:34px 40px 44px;box-shadow:10px 10px 0 #0a260a;border:4px solid #8b956d}
+.screenbox{background:#5c6a4a;border-radius:12px 12px 40px 12px;padding:22px 28px 18px}
+.screenbox .label{font:9px var(--px);color:#cfd7b5;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.screenbox .led{width:10px;height:10px;border-radius:50%;background:#e04b4b;box-shadow:0 0 8px #ff6b6b}
+video{width:100%;display:block;border:4px solid var(--g0);background:var(--g0);image-rendering:pixelated}
+.brand{font:18px var(--px);color:#3b3f7a;margin:20px 0 0;font-style:italic}.brand b{font-style:normal}
+.pad{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+.dpad{position:relative;width:96px;height:96px}.dpad i{position:absolute;background:#2b2b2b}
+.dpad i:nth-child(1){left:32px;top:0;width:32px;height:96px}.dpad i:nth-child(2){left:0;top:32px;width:96px;height:32px}
+.ab{display:flex;gap:18px;transform:rotate(-20deg)}.ab span{width:52px;height:52px;border-radius:50%;background:#9a2f5a;display:grid;place-items:center;font:12px var(--px);color:#c4cfa1;box-shadow:3px 3px 0 #5a1a35}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.tile{background:var(--g1);border:4px solid var(--g2);padding:18px 16px;box-shadow:6px 6px 0 #0a260a}
+.tile .v{font:24px/1.4 var(--px);color:var(--g5)}.tile .k{font:10px/1.6 var(--px);color:var(--g4);text-transform:uppercase;margin-top:10px}
+.tile .s{font-size:14px;line-height:1.6;color:var(--g3);margin-top:10px}
+.flow{display:flex;align-items:center;overflow-x:auto;padding:10px 4px 16px}
+.node{flex:none;width:136px;height:126px;display:flex;flex-direction:column;justify-content:center;background:var(--g1);border:4px solid var(--g2);padding:14px 10px;text-align:center;box-shadow:6px 6px 0 #0a260a}
+.node b{display:block;font:11px var(--px);color:var(--g4)}.node .pct{display:block;font:22px/1.2 var(--px);color:var(--g5);margin-top:10px}
+.node small{display:block;font-size:12px;line-height:1.4;color:var(--g3);margin-top:8px}.node.best{border-color:var(--g4);box-shadow:6px 6px 0 var(--g2)}
+.edge{flex:1;min-width:120px;height:4px;background:var(--g4);position:relative;margin:0 16px 0 6px}
+.edge:after{content:"";position:absolute;right:-14px;top:-7px;border-left:14px solid var(--g4);border-top:9px solid transparent;border-bottom:9px solid transparent}
+.edge>span{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:13px;line-height:1.4;color:var(--g5)}
+.stub{flex:none;width:20px;height:4px;background:var(--g4)}
+.fork{position:relative;display:flex;flex-direction:column;gap:34px}.fork .edge{margin-left:0;min-width:150px}
+.fork:before{content:"";position:absolute;left:0;top:63px;bottom:63px;width:4px;background:var(--g4)}
+.branch{display:flex;align-items:center}.branch.dim .node,.branch.dim .edge>span{opacity:.55}.branch.dim .edge{background:var(--g3)}.branch.dim .edge:after{border-left-color:var(--g3)}
+.bar{display:inline-block;height:12px;background:var(--g4);vertical-align:middle;margin-right:10px;box-shadow:2px 2px 0 var(--g2)}td small{color:var(--g3);font-weight:400}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.step{background:var(--g1);border:4px solid var(--g2);padding:20px;box-shadow:6px 6px 0 #0a260a}
+.step .n{font:22px var(--px);color:var(--g4)}.step h3{font:12px/1.7 var(--px);margin:14px 0 10px;color:var(--g5)}.step p{margin:0;color:var(--g3);font-size:15px}
+pre{background:#0a260a;border:4px solid var(--g2);padding:18px;overflow:auto;font:13px/1.6 var(--mono);color:var(--g5);box-shadow:6px 6px 0 #0a260a;margin:24px 0 0}
+pre .c{color:var(--g3)}
+.quote{background:var(--g1);border:4px solid var(--g4);padding:18px 20px;font-size:17px;box-shadow:6px 6px 0 var(--g2);margin:0 0 26px}
+.quote small{display:block;font:9px var(--px);color:var(--g4);margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:12px 14px;border-bottom:2px solid var(--g2);text-align:left}
+th{font:9px var(--px);color:var(--g4);text-transform:uppercase}tr.best td{background:var(--g1);color:var(--g5);font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.note{color:var(--g3);font-size:14px}
+.oak{background:var(--g5);color:var(--g0);border:4px solid var(--g0);box-shadow:0 0 0 4px var(--g5);padding:20px 22px;font:12px/2 var(--px);margin:28px 4px}
+footer{padding:40px 0 70px;border-top:4px solid var(--g2);color:var(--g3);font-size:13px}
+@media (max-width:860px){h1{font-size:28px}.stats{grid-template-columns:1fr 1fr}.steps,.two{grid-template-columns:1fr}.device{padding:20px}nav .links{display:none}}
+</style></head>
+<body>
+<nav><div class="wrap"><span class="logo">poke<b>·</b>jev</span>
+<div class="links"><a href="#watch">Demo</a><a href="#how"><span class="en">How it works</span><span class="zh">原理</span></a><a href="#steer"><span class="en">Steering</span><span class="zh">意图操控</span></a><a href="#results"><span class="en">Results</span><span class="zh">结果</span></a><a href="#start"><span class="en">Get started</span><span class="zh">快速开始</span></a></div>
+<button id="lang" class="btn alt" onclick="document.body.classList.toggle('zh');document.documentElement.lang=document.body.classList.contains('zh')?'zh-CN':'en'">EN / 中文</button></div></nav>
+
+<header class="hero wrap">
+<div class="kicker"><span class="en">Open source · jev-1.13.0</span><span class="zh">开源 · jev-1.13.0</span></div>
+<h1>JEV PLAYS<br><span class="hl">POKéMON SHOWDOWN</span></h1>
+<p class="lead"><span class="en">Code computes the facts. Jev, TypeSafe's decision model, picks the move. Steer it with one plain-text sentence.</span>
+<span class="zh">代码负责计算事实，Jev（TypeSafe 的决策模型）负责选招。只需一句自然语言，就能操控它的打法。</span></p>
+<a class="btn" href="#watch">▶ <span class="en">Watch demo</span><span class="zh">观看演示</span></a>
+<a class="btn alt" id="src" href="https://github.com/zdhgreat/pokejev">
+<span class="en">Source code</span><span class="zh">源代码</span></a>
+</header>
+
+<div class="wrap" id="watch">
+<div class="screen"><div class="scrlabel"><span class="led"></span>JEV BOY · <span class="en">LIVE REPLAY — battle on the left, Jev's decision on the right</span><span class="zh">实战回放 —— 左侧为对战画面，右侧为 Jev 的决策</span></div>
+<video src="media/demo-battle.mp4" poster="media/poster.png" autoplay muted loop playsinline controls></video></div>
+</div>
+
+<section class="wrap" id="stats">
+<h2><span class="en">THE NUMBERS</span><span class="zh">关键数据</span></h2>
+<div class="stats">
+<div class="tile"><div class="v">69%</div><div class="k"><span class="en">Win rate</span><span class="zh">胜率</span></div><div class="s"><span class="en">Jev won 100 of 144 battles against poke-env's built-in rule-based bot. 50% would be an even match.</span><span class="zh">对 poke-env 自带的规则机器人，144 局赢了 100 局。50% 代表势均力敌。</span></div></div>
+<div class="tile"><div class="v">+14</div><div class="k"><span class="en">Points better than v0.1</span><span class="zh">比 v0.1 高出的百分点</span></div><div class="s"><span class="en">Same 144 battles: v0.1 won 56%, v4 wins 69%. Even the cautious estimate is +5.</span><span class="zh">同样的 144 局：v0.1 胜率 56%，v4 为 69%。保守估计也至少高 5 个点。</span></div></div>
+<div class="tile"><div class="v">97%</div><div class="k"><span class="en">Instructions followed</span><span class="zh">意图遵从率</span></div><div class="s"><span class="en">On the 228 live turns where the designer's sentence and the plain rule disagreed, Jev followed the sentence.</span><span class="zh">实战中有 228 个回合设计师的指令与普通规则相冲突，Jev 在 97% 的回合中遵守了指令。</span></div></div>
+<div class="tile"><div class="v">$0.0014</div><div class="k"><span class="en">Cost per battle</span><span class="zh">每局成本</span></div><div class="s"><span class="en">About 700 battles for one US dollar, at about 1 second per move.</span><span class="zh">1 美元约可打 700 局，每步约 1 秒。</span></div></div>
+</div>
+<div class="oak"><span class="en">OAK: JEV is not a calculator. Give it the facts, and it chooses well.</span><span class="zh">大木博士：JEV 不是计算器。把事实交给它，它就能做出好选择。</span></div>
+</section>
+
+<section class="wrap" id="how">
+<h2><span class="en">HOW IT WORKS</span><span class="zh">工作原理</span></h2>
+<div class="steps">
+<div class="step"><div class="n">1</div><h3><span class="en">CODE COMPUTES</span><span class="zh">代码计算</span></h3><p><span class="en">Damage, KO chance, type matchups and the opponent's best reply, for every legal move and switch.</span><span class="zh">为每个合法招式和换人算出伤害、能否击倒、属性克制和对手的最佳回击。</span></p></div>
+<div class="step"><div class="n">2</div><h3><span class="en">JEV CHOOSES</span><span class="zh">JEV 选择</span></h3><p><span class="en">It sees all the options at once and gives each one a probability.</span><span class="zh">一次看到全部选项，给每个选项一个概率。</span></p></div>
+<div class="step"><div class="n">3</div><h3><span class="en">THE MOVE IS PLAYED</span><span class="zh">执行招式</span></h3><p><span class="en">The top pick is played, and every decision is saved for the replay viewer.</span><span class="zh">执行概率最高的选项，每次决策都保存下来，供回放查看。</span></p></div>
+</div>
+</section>
+
+<section class="wrap" id="steer">
+<h2><span class="en">STEER WITH ONE SENTENCE</span><span class="zh">一句话操控</span></h2>
+<div class="two"><div>
+<div class="quote"><small><span class="en">DESIGNER INTENT</span><span class="zh">设计师意图</span></small>Never use a move that lowers our own stats unless that move is likely to knock out the opponent.</div>
+<p><span class="en">No rule code: the sentence goes straight to Jev. In the video, the plain rule would pick Close Combat, which lowers our stats; Jev picks Triple Axel instead.</span>
+<span class="zh">不用写规则代码，这句话直接交给 Jev。视频中，普通规则会选降低自身能力的近身战，而 Jev 改选了三旋击。</span></p>
+<p class="note"><span class="en">Works in Chinese too.</span><span class="zh">中文意图同样有效。</span></p>
+</div><div><video src="media/demo-steering.mp4" muted loop playsinline controls preload="metadata"></video></div></div>
+</section>
+
+<section class="wrap" id="results">
+<h2><span class="en">RESULTS</span><span class="zh">评测结果</span></h2>
+<div class="flow"><div class="node"><b>v0.1</b><span class="pct">56%</span><small><span class="en">starting point</span><span class="zh">起点</span></small></div><div class="edge"><span><span class="en">+ Tera &amp; damage calculator</span><span class="zh">+ 太晶化与伤害计算器</span></span></div><div class="node"><b>v1</b><span class="pct">65%</span></div><div class="edge"><span><span class="en">+ opponent's next turn</span><span class="zh">+ 对手下一回合</span></span></div><div class="node"><b>v2</b><span class="pct">65%</span></div><div class="stub"></div><div class="fork"><div class="branch"><div class="edge"><span><span class="en">+ memory of the last 3 turns</span><span class="zh">+ 最近 3 回合的记忆</span></span></div><div class="node best"><b>v4 ★</b><span class="pct">69%</span><small><span class="en">default · +14 vs v0.1</span><span class="zh">默认 · 比 v0.1 高 14 点</span></small></div></div><div class="branch dim"><div class="edge"><span><span class="en">+ ask Jev twice</span><span class="zh">+ 问 Jev 两次</span></span></div><div class="node"><b>v3</b><span class="pct">63%</span><small><span class="en">double cost, no gain</span><span class="zh">成本翻倍，无提升</span></small></div></div></div></div>
+<p class="note"><span class="en">Win rate against poke-env's rule-based bot; every version played the same 144 battles. Only v4's gain is clearly more than luck (95% range +5 to +24 points).</span><span class="zh">胜率为对 poke-env 规则机器人的结果，每个版本打同样的 144 局。只有 v4 的提升明显不是运气（95% 区间为 +5 到 +24 个百分点）。</span></p>
+<p class="note"><span class="en">Against other public Jev agents: 24–12 and 18–5.</span><span class="zh">与其他公开的 Jev 智能体对战：24–12 和 18–5。</span></p>
+</section>
+
+<section class="wrap" id="start">
+<h2><span class="en">GET STARTED</span><span class="zh">快速开始</span></h2>
+<div class="two"><div>
+<pre><span class="c"># 1. a local Pokémon Showdown server</span>
+git clone https://github.com/smogon/pokemon-showdown
+cd pokemon-showdown && node pokemon-showdown start --no-security
+
+<span class="c"># 2. this project (Python 3.10+)</span>
+pip install -r requirements.txt
+
+<span class="c"># 3. a free practice battle + the viewer</span>
+python -m pokejev demo
+
+<span class="c"># 4. real Jev (your TypeSafe key, ~$0.001/battle)</span>
+export TYPESAFE_API_KEY=...
+python -m pokejev demo --real --intent ha02</pre>
+</div><div><video src="media/setup-walkthrough.mp4" muted playsinline controls preload="metadata"></video></div></div>
+</section>
+
+<footer class="wrap"><p><span class="en">Related: NatBrian/pokemon-showdown-jev-agent · izzuddin8803/jev-showdown · xtolol/Porygon-Jev · neurogabo/jev-arena · PokéChamp · PokéAgent Challenge.</span>
+<span class="zh">相关项目：NatBrian/pokemon-showdown-jev-agent · izzuddin8803/jev-showdown · xtolol/Porygon-Jev · neurogabo/jev-arena · PokéChamp · PokéAgent Challenge。</span></p>
+<p><span class="en">MIT licensed. Not affiliated with TypeSafe, Smogon, Nintendo, Game Freak or The Pokémon Company. Pokémon is a trademark of its respective owners. Font: Press Start 2P (SIL OFL).</span>
+<span class="zh">MIT 许可。与 TypeSafe、Smogon、任天堂、Game Freak、The Pokémon Company 无关联。Pokémon 为其各自所有者的商标。字体：Press Start 2P（SIL OFL）。</span></p></footer>
+</body></html>
