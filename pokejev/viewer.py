@@ -225,7 +225,14 @@ let trig=-1,m=0;for(let j=a+1;j<end;j++){if(ours(q[j]))trig=j;else if(trig>=0&&q
    protocol-relative ones that break on file:// pages; either way every effect shows as an empty box. */
 function fixEffects(){const fx="https://play.pokemonshowdown.com/fx/";for(const k in window.BattleEffects||{}){const e=BattleEffects[k];
 if(e&&e.url&&!/^https?:/.test(e.url))e.url=e.url.startsWith("//")?"https:"+e.url:fx+e.url.split("/").pop()}try{Replays.battle.scene.preloadEffects()}catch(e){}}
-function waitShowdown(n){if(window.Replays&&Replays.battle){ready=true;try{fixEffects();marks()}catch(e){}try{if(BT.side==="p2")Replays.battle.switchViewpoint()}catch(e){}
+/* Sprites download the first time a Pokémon appears, so it is invisible for its first seconds on screen.
+   Load every Pokémon in the log (front and back) and every effect image up front; resolves to [loaded, total]. */
+function preloadAll(){const sc=Replays.battle.scene,u=new Set();
+for(const l of Replays.battle.stepQueue||[]){const m=/^\|(?:poke|switch|drag|replace|detailschange)\|[^|]*\|([^|,]+)/.exec(l);if(!m)continue;
+for(const f of[true,false])try{u.add(Dex.getSpriteData(m[1],f,{gen:sc.gen,mod:sc.mod}).url)}catch(e){}}
+for(const k in window.BattleEffects||{})if(BattleEffects[k]&&BattleEffects[k].url)u.add(BattleEffects[k].url);
+return Promise.all([...u].map(s=>new Promise(r=>{const i=new Image();i.onload=()=>r(1);i.onerror=()=>r(0);i.src=s}))).then(a=>[a.filter(Boolean).length,a.length])}
+function waitShowdown(n){if(window.Replays&&Replays.battle){ready=true;try{fixEffects();marks();preloadAll()}catch(e){}try{if(BT.side==="p2")Replays.battle.switchViewpoint()}catch(e){}
 if(Q.has("step"))seek();if(Q.get("autoplay")==="1")play();return}if(n>40||!BT.log){el("offline").style.display="flex";return}setTimeout(()=>waitShowdown(n+1),250)}
 function init(){chips();if(DATA.intent_text){el("intent").hidden=false;el("intentText").textContent=DATA.intent_text}
 el("battle").innerHTML=DATA.battles.map((b,i)=>`<option value="${i}">Battle ${i+1} — ${b.won?"won":b.won===false?"lost":"?"} (${b.steps.length} decisions)</option>`).join("");

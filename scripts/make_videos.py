@@ -122,7 +122,7 @@ async def _record(url, folder, start_turn, max_turn, conflict_turns, hold):
             await send("Page.enable")
             await send("Emulation.setDeviceMetricsOverride", width=W, height=H, deviceScaleFactor=1, mobile=False)
             await send("Page.navigate", url=url)
-            for _ in range(120):
+            for _ in range(240):                         # up to 60 s for Showdown's scripts
                 if await js("typeof ready!=='undefined'&&ready"):
                     break
                 await asyncio.sleep(0.25)
@@ -130,15 +130,13 @@ async def _record(url, folder, start_turn, max_turn, conflict_turns, hold):
                 raise SystemExit("the Showdown battle screen did not load (offline?)")
             if start_turn:
                 await js("Replays.battle.seekTurn(%d);S=Math.max(0,BT.steps.findIndex(s=>s.turn>=%d));render()" % (start_turn, start_turn))
-            # every move-effect image must be downloaded first, or its first use shows an empty box
-            loaded = await js("Promise.all(Object.values(BattleEffects).filter(e=>e&&e.url).map(e=>new Promise(r=>{"
-                              "const i=new Image();i.onload=()=>r(1);i.onerror=()=>r(0);i.src=e.url})))"
-                              ".then(a=>[a.filter(Boolean).length,a.length])")
-            print("effect images loaded: %d/%d" % tuple(loaded))
+            # every sprite and effect image must be downloaded first, or it is missing the first time it is used
+            loaded = await js("preloadAll()")
+            print("sprites and effect images loaded: %d/%d" % tuple(loaded))
             await asyncio.sleep(1.5)                     # sprites and backdrop
-            await send("Page.startScreencast", format="jpeg", quality=88, maxWidth=W, maxHeight=H)
-            await asyncio.sleep(1.0)
             await js("play()")
+            await asyncio.sleep(0.3)                     # Showdown's own "Play" button is gone once playback starts
+            await send("Page.startScreencast", format="jpeg", quality=88, maxWidth=W, maxHeight=H)
             held = set()
             while True:
                 await asyncio.sleep(0.1)
@@ -194,7 +192,7 @@ def _jpg(f):
     if f.suffix == ".jpg":
         return f
     j = f.with_suffix(".jpg")
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(f), "-q:v", "2", str(j)], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(f), "-pix_fmt", "yuvj420p", "-q:v", "2", str(j)], check=True)
     return j
 
 
